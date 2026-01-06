@@ -19,6 +19,7 @@ from multilspy.language_server import LanguageServer
 from multilspy.lsp_protocol_handler.server import ProcessLaunchInfo
 from multilspy.lsp_protocol_handler.lsp_types import InitializeParams
 from multilspy.multilspy_config import MultilspyConfig
+from multilspy.multilspy_exceptions import MultilspyException
 from multilspy.multilspy_settings import MultilspySettings
 from multilspy.multilspy_utils import FileUtils
 from multilspy.multilspy_utils import PlatformUtils
@@ -408,3 +409,31 @@ class EclipseJDTLS(LanguageServer):
 
             await self.server.shutdown()
             await self.server.stop()
+
+    async def request_java_class_file_contents(self, jdt_uri: str) -> str | None:
+        """
+        Raise a [java/classFileContents](https://github.com/eclipse-jdtls/eclipse.jdt.ls/wiki/Language-Server-Protocol-Extensions) request to the Language Server
+        to retrieve the contents of a .class file.
+
+        :param jdt_uri: The jdt:// URI of the class file
+
+        :return str | None: The decompiled source code of the class file, or None if failed
+        """
+
+        if not self.server_started:
+            self.logger.log(
+                "request_java_class_file_contents called before Language Server started",
+                logging.ERROR,
+            )
+            raise MultilspyException("Language Server not started")
+
+        response = await self.server.send_request(
+            "java/classFileContents",
+            {"uri": jdt_uri}
+        )
+        if response is None:
+            return None
+
+        assert isinstance(response, str), f"Unexpected response from Language Server: {response}"
+
+        return response

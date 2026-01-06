@@ -682,6 +682,18 @@ class LanguageServer:
 
         return ret
 
+    async def request_java_class_file_contents(self, jdt_uri: str) -> Optional[str]:
+        """
+        Raise a [java/classFileContents](https://github.com/eclipse-jdtls/eclipse.jdt.ls/wiki/Language-Server-Protocol-Extensions) request to the Language Server
+        to retrieve the contents of a .class file. This is an Eclipse JDT Language Server extension, not supported by other language servers.
+
+        :param jdt_uri: The jdt:// URI of the class file
+
+        :return Optional[str]: The decompiled source code of the class file, or None if not supported
+        """
+        # Default implementation returns None, only EclipseJDTLS overrides this method
+        return None
+
 @ensure_all_methods_implemented(LanguageServer)
 class SyncLanguageServer:
     """
@@ -864,5 +876,19 @@ class SyncLanguageServer:
         """
         result = asyncio.run_coroutine_threadsafe(
             self.language_server.request_workspace_symbol(query), self.loop
+        ).result(timeout=self.timeout)
+        return result
+
+    def request_java_class_file_contents(self, jdt_uri: str) -> Optional[str]:
+        """
+        Raise a [java/classFileContents](https://github.com/eclipse-jdtls/eclipse.jdt.ls/wiki/Language-Server-Protocol-Extensions) request to the Language Server
+        to retrieve the contents of a .class file. This is an Eclipse JDT Language Server extension, not supported by other language servers.
+
+        :param jdt_uri: The jdt:// URI of the class file
+
+        :return Optional[str]: The decompiled source code of the class file, or None if not supported
+        """
+        result = asyncio.run_coroutine_threadsafe(
+            self.language_server.request_java_class_file_contents(jdt_uri), self.loop
         ).result(timeout=self.timeout)
         return result
