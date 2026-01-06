@@ -199,6 +199,11 @@ class EclipseJDTLS(LanguageServer):
 
         os.chmod(jre_path, stat.S_IEXEC)
 
+        # Fix jspawnhelper permissions - required for ProcessBuilder to spawn processes
+        jspawnhelper_path = str(PurePath(jre_home_path, "lib", "jspawnhelper"))
+        if os.path.exists(jspawnhelper_path):
+            os.chmod(jspawnhelper_path, stat.S_IRUSR | stat.S_IXUSR)  # r-x------ (500)
+
         assert os.path.exists(vscode_java_path)
         assert os.path.exists(jre_home_path)
         assert os.path.exists(jre_path)
