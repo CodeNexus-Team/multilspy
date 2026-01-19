@@ -390,17 +390,25 @@ class EclipseJDTLS(LanguageServer):
                 {"settings": initialize_params["initializationOptions"]["settings"]}
             )
 
-            await self.intellicode_enable_command_available.wait()
-
-            java_intellisense_members_path = self.runtime_dependency_paths.intellisense_members_path
-            assert os.path.exists(java_intellisense_members_path)
-            intellicode_enable_result = await self.server.send.execute_command(
-                {
-                    "command": "java.intellicode.enable",
-                    "arguments": [True, java_intellisense_members_path],
-                }
-            )
-            assert intellicode_enable_result
+            try:
+                await asyncio.wait_for(
+                    self.intellicode_enable_command_available.wait(),
+                    timeout=120
+                )
+                java_intellisense_members_path = self.runtime_dependency_paths.intellisense_members_path
+                assert os.path.exists(java_intellisense_members_path)
+                intellicode_enable_result = await self.server.send.execute_command(
+                    {
+                        "command": "java.intellicode.enable",
+                        "arguments": [True, java_intellisense_members_path],
+                    }
+                )
+                assert intellicode_enable_result
+            except asyncio.TimeoutError:
+                self.logger.log(
+                    "Intellicode command registration timed out, skipping intellicode",
+                    logging.WARNING,
+                )
 
             # TODO: Add comments about why we wait here, and how this can be optimized
             await self.service_ready_event.wait()
